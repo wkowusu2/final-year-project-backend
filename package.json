@@ -1,0 +1,44 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "build": "tsc",
+    "start:dev": "cross-env NODE_ENV=development node dist/server.js",
+    "start:prod": "cross-env NODE_ENV=production node dist/server.js",
+    "start:example": "cross-env NODE_ENV=example node dist/server.js",
+    "db:pull:dev": "cross-env NODE_ENV=development node --import tsx ./node_modules/drizzle-kit/bin.cjs pull",
+    "db:generate": "cross-env NODE_ENV=development node --import tsx ./node_modules/drizzle-kit/bin.cjs generate",
+    "db:migrate": "cross-env NODE_ENV=development node --import tsx ./node_modules/drizzle-kit/bin.cjs migrate",
+    "db:migrate:prod": "cross-env NODE_ENV=production node --import tsx ./node_modules/drizzle-kit/bin.cjs migrate",
+    "db:migrate:local": "cross-env NODE_ENV=local node --import tsx ./node_modules/drizzle-kit/bin.cjs migrate",
+    "db:migrate:example": "cross-env NODE_ENV=example node --import tsx ./nod"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@types/pg": "^8.20.0",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "cross-env": "^10.1.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.2.0",
+    "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.0.1",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
