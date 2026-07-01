@@ -1,8 +1,8 @@
-import { integer, pgTable, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 
 export const otps = pgTable('otps', {
     id: uuid().primaryKey().defaultRandom(),
-    code: integer().notNull().unique(),
+    code: text().notNull().unique(),
     phone: varchar().notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     expiresAt: timestamp('expires_at').notNull()

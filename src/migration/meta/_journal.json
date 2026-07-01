@@ -8,6 +8,27 @@
       "when": 1782829318548,
       "tag": "0000_careful_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782850413504,
+      "tag": "0001_lumpy_vampiro",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782860207062,
+      "tag": "0002_lying_sersi",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782862277960,
+      "tag": "0003_spicy_sentinels",
+      "breakpoints": true
     }
   ]
 }

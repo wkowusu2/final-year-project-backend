@@ -1,0 +1,1 @@
+ALTER TABLE "otps" ALTER COLUMN "code" SET DATA TYPE text;
