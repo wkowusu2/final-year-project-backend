@@ -44,7 +44,7 @@ export async function saveRefreshToken(details: RefreshTokenDetails) {
     try {
         const expiry = new Date();
         expiry.setTime(expiry.getDay() + 7 * 24 * 60 * 60 * 1000);
-        await db.insert(refreshToken).values({hashedRefreshToken: details.hashedRefreshToken, phone: details.phone, expiresAt: expiry});
+        await db.insert(refreshToken).values({hashedRefreshToken: details.hashedRefreshToken, userId: details.userId, expiresAt: expiry});
         return successReturnDb('Otp stored successfully');
     } catch (error: any) {
         console.log('Error from saveRefreshToken: ',error)
@@ -52,9 +52,9 @@ export async function saveRefreshToken(details: RefreshTokenDetails) {
     }
 }
 
-export async function getRefreshtoken(phone: string) {
+export async function getRefreshtoken(userId: string) {
     try {
-        const otp = await db.select({otp: refreshToken.hashedRefreshToken, expiresAt: refreshToken.expiresAt}).from(refreshToken).where(eq(refreshToken.phone, phone));
+        const otp = await db.select({otp: refreshToken.hashedRefreshToken, expiresAt: refreshToken.expiresAt}).from(refreshToken).where(eq(refreshToken.userId, userId));
         if(otp.length === 0) throw new Error('Otp does not exist');
         return successReturnDb(otp[0]);
     } catch (error: any) {
@@ -63,10 +63,10 @@ export async function getRefreshtoken(phone: string) {
     }
 }
 
-export async function revokeRefreshToken(phone: string) {
+export async function revokeRefreshToken(userId: string) {
     try {
         const now = new Date()
-        await db.update(refreshToken).set({revoked: true, revokedAt: now}).where(eq(refreshToken.phone, phone));
+        await db.update(refreshToken).set({revoked: true, revokedAt: now}).where(eq(refreshToken.userId, userId));
         return successReturnDb('Revoke successful')
     } catch (error: any) {
         console.log('Error from revokeRefreshToken: ',error)

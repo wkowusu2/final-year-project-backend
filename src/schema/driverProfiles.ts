@@ -8,4 +8,5 @@ export const drivers = pgTable('drivers', {
     deleted: boolean().default(false),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
+    onboardingDone: boolean('on_boarding_done').default(false)
 })

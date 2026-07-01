@@ -4,7 +4,7 @@ import { createUser, deleteOtp, getOtp, getUserByPhone, saveOtp } from "../../re
 import { OtpToBeStored, VerifyBody } from "../../types/auth.js";
 import { hasDriverProfileDb } from "../../repository/drivers.js";
 import { generateTokens } from "../../service/jwtService.js";
-import { sendSms } from "../../service/smsService.js";
+// import { sendSms } from "../../service/smsService.js";
 
 export async function sendOtp(req: Request, res: Response) {
     try {
@@ -21,14 +21,14 @@ export async function sendOtp(req: Request, res: Response) {
         const saveOtpRes = await saveOtp(obj);
         if(!saveOtpRes.success) throw new Error(saveOtpRes.error);
         //TODO: send the otp
-        const { error, success } = await sendSms({otp: otp, phone: phone});
-        if(!success){
-            console.log('Failed to send sms with the error: ', error)
-        }
+        // const { error, success } = await sendSms({otp: otp, phone: phone});
+        // if(!success){
+        //     console.log('Failed to send sms with the error: ', error)
+        // }
         //send the response
         return res.status(200).json({success: true, data: "Otp sent", error: null})
     } catch (error: any) {
-        console.log('Some error occurred at: ', sendOtp);
+        console.log('Some error occurred at sendOtp: ', error);
         return res.status(400).json({success: false, error: error, data: null})
     }
 }
@@ -71,12 +71,15 @@ export async function verifyOtp(req: Request, res: Response) {
 
         let hasProfile: boolean = false;
         let fullName: string | null = null ;
+        let doneOnBoarding: boolean = false;
         if(verifyBody.role === 'driver'){
             const hasProfileDetails = await hasDriverProfileDb(verifyBody.phone);
             if(!hasProfileDetails.success) throw new Error(hasProfileDetails.error);
             if(hasProfileDetails.data.hasDriverProfile === true){
+                console.log('the profile data is: ',hasProfileDetails.data)
                 hasProfile = true
                 fullName = hasProfileDetails.data.fullName
+                doneOnBoarding = hasProfileDetails.data.isOnboardingDone
             }
         }
         
@@ -88,17 +91,12 @@ export async function verifyOtp(req: Request, res: Response) {
             hasProfile,
             accessToken: _data?.access_token,
             refreshToke: _data?.refresh_token,
-            fullName
+            fullName: fullName,
+            doneOnBoarding: doneOnBoarding
         }
         return res.status(200).json({success: true, error: null, data: returnObj})
     } catch (error: any) {
-        console.log('Some error occurred at: ', verifyOtp);
+        console.log('Some error occurred at verifyOtp: ', error);
         return res.status(400).json({success: false, error: error, data: null})
     }
-}
-
-export type UserFetched = {
-    userId: string,
-    phone: string,
-    role: 'driver' | 'admin'
 }

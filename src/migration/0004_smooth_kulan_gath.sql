@@ -1,0 +1,1 @@
+ALTER TABLE "drivers" ADD COLUMN "on_boarding_done" boolean DEFAULT false;

@@ -14,7 +14,7 @@ export type OtpToBeStored = {
 
 export type RefreshTokenDetails = {
     hashedRefreshToken: string,
-    phone: string
+    userId: string
 }
 
 export type User = {
@@ -32,4 +32,10 @@ export type refreshTokenDetailType = InferInsertModel<typeof refreshToken>
 export type OtpSms = {
     otp: string,
     phone: string,
+}
+
+export type UserFetched = {
+    userId: string,
+    phone: string,
+    role: 'driver' | 'admin'
 }

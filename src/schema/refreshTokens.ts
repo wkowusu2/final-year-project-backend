@@ -3,7 +3,7 @@ import { users } from "./users.js";
 
 export const refreshToken = pgTable('refresh_tokens', {
     id: uuid().primaryKey().defaultRandom(),
-    phone: varchar().notNull().references(() => users.phone, {
+    userId: uuid('user_id').notNull().references(() => users.id, {
         onDelete: 'cascade'
     }),
     hashedRefreshToken: text('hashed_refresh_token').unique().notNull(),
