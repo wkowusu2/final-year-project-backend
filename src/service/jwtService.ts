@@ -19,7 +19,7 @@ export async function generateTokens(userId: string, phone: string, role: string
 
     const {actulToken, hashedToken} = generateRefreshToken();
 
-    // const refresh_expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+   //  const refresh_expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const refreshTokenDetail: refreshTokenDetailType = { hashedRefreshToken: hashedToken, userId: userId}
     const response = await saveRefreshToken(refreshTokenDetail); 
 

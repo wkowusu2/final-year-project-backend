@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import { generateOtp } from "../../service/otpService.js";
-import { createUser, deleteOtp, getOtp, getUserByPhone, saveOtp } from "../../repository/otp.js";
+import { createUser, deleteOtp, deleteRefreshToken, getOtp, getRefreshtoken, getUser, getUserByPhone, saveOtp } from "../../repository/otp.js";
 import { OtpToBeStored, VerifyBody } from "../../types/auth.js";
 import { hasDriverProfileDb } from "../../repository/drivers.js";
 import { generateTokens } from "../../service/jwtService.js";
+import { hashToken } from "../../utils/cryptoHelper.js";
 // import { sendSms } from "../../service/smsService.js";
 
 export async function sendOtp(req: Request, res: Response) {
@@ -92,11 +93,44 @@ export async function verifyOtp(req: Request, res: Response) {
             accessToken: _data?.access_token,
             refreshToke: _data?.refresh_token,
             fullName: fullName,
-            doneOnBoarding: doneOnBoarding
+            doneOnBoarding: doneOnBoarding,
+            userId: user.userId
         }
         return res.status(200).json({success: true, error: null, data: returnObj})
     } catch (error: any) {
         console.log('Some error occurred at verifyOtp: ', error);
+        return res.status(400).json({success: false, error: error, data: null})
+    }
+}
+
+export async function refreshToken(req: Request, res: Response) {
+    try {
+        const { refreshToken, userId: sub } = req.body;
+        if(!refreshToken) throw new Error('Missing details');
+        if(!sub) throw new Error('User has no identity');
+
+        const userfetched = await getUser(sub);
+        if(!userfetched.success) throw new Error(userfetched.error);
+
+
+        const hashedToken = hashToken(refreshToken);
+        
+        const {success, error, data} = await getRefreshtoken(sub, hashedToken);
+        if(!success) throw new Error(error);
+
+        const now = new Date();
+        if(now > data.expiresAt){
+            await deleteRefreshToken(sub, hashedToken);
+            throw new Error('Token has expired');
+        }
+        await deleteRefreshToken(sub, hashedToken); 
+        
+        const {_error, _success, _data} = await generateTokens(sub, userfetched.data.phone, userfetched.data.role)
+        if(!_success) throw new Error(_error!);
+
+        return res.status(200).json({success: true, data: _data, error: null})
+    } catch (error: any) {
+        console.log('Some error occurred at refreshToken: ', error);
         return res.status(400).json({success: false, error: error, data: null})
     }
 }

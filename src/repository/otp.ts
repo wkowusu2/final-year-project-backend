@@ -42,8 +42,7 @@ export async function deleteOtp(details: OtpToBeStored) {
 
 export async function saveRefreshToken(details: RefreshTokenDetails) {
     try {
-        const expiry = new Date();
-        expiry.setTime(expiry.getDay() + 7 * 24 * 60 * 60 * 1000);
+        const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         await db.insert(refreshToken).values({hashedRefreshToken: details.hashedRefreshToken, userId: details.userId, expiresAt: expiry});
         return successReturnDb('Otp stored successfully');
     } catch (error: any) {
@@ -52,10 +51,10 @@ export async function saveRefreshToken(details: RefreshTokenDetails) {
     }
 }
 
-export async function getRefreshtoken(userId: string) {
+export async function getRefreshtoken(userId: string, hashedToken: string) {
     try {
-        const otp = await db.select({otp: refreshToken.hashedRefreshToken, expiresAt: refreshToken.expiresAt}).from(refreshToken).where(eq(refreshToken.userId, userId));
-        if(otp.length === 0) throw new Error('Otp does not exist');
+        const otp = await db.select({token: refreshToken.hashedRefreshToken, expiresAt: refreshToken.expiresAt}).from(refreshToken).where(and(eq(refreshToken.userId, userId), eq(refreshToken.hashedRefreshToken, hashedToken)));
+        if(otp.length === 0) throw new Error('Token does not exist');
         return successReturnDb(otp[0]);
     } catch (error: any) {
         console.log('Error from getRefreshtoken: ',error)
@@ -74,6 +73,15 @@ export async function revokeRefreshToken(userId: string) {
     }
 }
 
+export async function deleteRefreshToken(userId: string, token: string) {
+    try {
+        await db.delete(refreshToken).where(and(eq(refreshToken.userId, userId), eq(refreshToken.hashedRefreshToken, token)));
+        return successReturnDb('Revoke successful')
+    } catch (error: any) {
+        console.log('Error from revokeRefreshToken: ',error)
+        return errorReturnDb(error);
+    }
+}
 export async function createUser(phone: string) {
     try {
         const user = await db.insert(users).values({phone: phone}).returning({phone: users.phone, userId: users.id, role: users.role});
