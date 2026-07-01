@@ -7,9 +7,9 @@ import { errorReturnDb, successReturnDb } from "../utils/db.utils.js";
 const db = getDb();
 
 
-export async function createDriverProfile(details: Driver) {
+export async function createDriverProfileDb(details: Driver) {
     try {
-        const newDriver = await db.insert(drivers).values({fullName: details.fullName, phone: details.phone, email: details?.email}).returning({fullName: drivers.fullName, phone: drivers.phone, email: drivers.email})
+        const newDriver = await db.insert(drivers).values({id: details.userId ,fullName: details.fullName, phone: details.phone, email: details?.email}).returning({fullName: drivers.fullName, phone: drivers.phone, email: drivers.email})
         if(newDriver.length === 0) throw new Error('Failed to create driver');
         return successReturnDb(newDriver);
     } catch (error: any) {

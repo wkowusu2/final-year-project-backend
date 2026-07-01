@@ -1,5 +1,11 @@
 import { InferInsertModel } from "drizzle-orm"
 import { refreshToken } from "../schema/refreshTokens.js"
+import { JwtPayload } from "jsonwebtoken";
+
+export type JwtPayloadType = JwtPayload & {
+    phone: string,
+    role: string,
+}
 
 export type OtpToBeStored = {
     otp: string,
@@ -22,3 +28,8 @@ export type VerifyBody = {
 }
 
 export type refreshTokenDetailType = InferInsertModel<typeof refreshToken>
+
+export type OtpSms = {
+    otp: string,
+    phone: string,
+}

@@ -1,0 +1,41 @@
+import { Request, Response } from "express";
+import { Driver } from "../../types/driver.js";
+import { createDriverProfileDb, getDriverProfileById } from "../../repository/drivers.js";
+
+export async function createDriverProfile(req: Request, res: Response) {
+    try {
+        const {sub} = res.locals.user;
+        if(!sub) throw new Error('User has no identity');
+
+        const details: Driver = req.body;
+        
+        if(!details || !details.fullName || !details.phone) throw new Error('Missing Details');
+        if(typeof details.fullName !== 'string') throw new Error('Wrong data format');
+        if(typeof details.phone !== 'string') throw new Error('Wrong data format');
+
+        details.userId = sub;
+
+        const {success, error, data} = await createDriverProfileDb(details);
+        if(!success) throw new Error(error);
+
+        return res.status(201).json({success: true, data: data, error: null})
+    } catch (error: any) {
+        console.log("Error occurred at createDriverProfile: ", error);
+        return res.status(400).json({success: false, error: error, data: null})
+    }
+}
+
+export async function getDriverProfileWithId(req: Request, res: Response) {
+    try {
+        const {sub} = res.locals.user;
+        if(!sub) throw new Error('User has no identity');
+
+        const {success, data, error} = await getDriverProfileById(sub);
+        if(!success) throw new Error(error);
+
+        return res.status(200).json({success: true, error: null, data: data})
+    } catch (error: any) {
+        console.log("Error occurred at getDriverProfile: ", error);
+        return res.status(400).json({success: false, error: error, data: null})
+    }
+}

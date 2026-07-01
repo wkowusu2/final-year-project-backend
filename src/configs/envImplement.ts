@@ -37,6 +37,11 @@ export const config = {
         secret: getSpecificEnvValue("JWT_SECRET")
     }, 
 
+    arkesel: {
+        apiKey: getSpecificEnvValue('ARKESEL_API_KEY'),
+        baseUrl: getSpecificEnvValue('ARKESEL_BASE_URL')
+    }
+
     // hubtel: {
     //     clientId: getSpecificEnvValue("HUBTEL_CLIENT_ID"),
     //     clientSecret: getSpecificEnvValue("HUBTEL_CLIENT_SECRET")

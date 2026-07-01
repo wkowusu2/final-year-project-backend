@@ -3,7 +3,10 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser'
 import { config } from './configs/envImplement.js';
 import { closeDb, dbconnect } from './configs/db.config.js';
-import authRouter from './routes/auth/auth.route.js'
+import authRouter from './routes/auth/auth.route.js';
+import driverProfileRouter from './routes/driver/profile.route.js'
+
+
 const port = config.port || 3000;
 const API_PREFIX = '/api/v1';
 async function startServer(){
@@ -19,7 +22,8 @@ async function startServer(){
     app.use(express.json());
     app.use(cookieParser());
 
-    app.use(API_PREFIX+"/auth", authRouter)
+    app.use(API_PREFIX+"/auth", authRouter);
+    app.use(API_PREFIX+"/driver-profiles", driverProfileRouter)
 
     
     app.listen(port, () => {
