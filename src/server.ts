@@ -6,6 +6,7 @@ import { closeDb, dbconnect } from './configs/db.config.js';
 import authRouter from './routes/auth/auth.route.js';
 import driverProfileRouter from './routes/driver/profile.route.js'
 import roadsRouter from './routes/map/roads.route.js';
+import trackingRouter from './routes/tracking/tracking.route.js';
 
 
 const port = config.port || 3000;
@@ -26,6 +27,7 @@ async function startServer(){
     app.use(API_PREFIX+"/auth", authRouter);
     app.use(API_PREFIX+"/driver-profiles", driverProfileRouter)
     app.use(API_PREFIX+"/map", roadsRouter);
+    app.use(API_PREFIX+"/tracking", trackingRouter);
 
     
     app.listen(port, () => {

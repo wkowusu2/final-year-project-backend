@@ -1,0 +1,2 @@
+ALTER TABLE "gps_points" ADD COLUMN "client_point_id" uuid NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "gps_points_session_client_point_idx" ON "gps_points" USING btree ("session_id","client_point_id");

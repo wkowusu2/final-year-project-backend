@@ -26,6 +26,7 @@ export const trackingSessions = pgTable('tracking_sessions', {
 export const gpsPoints = pgTable('gps_points', {
     id: uuid().primaryKey().defaultRandom(),
     sessionId: uuid('session_id').notNull().references(() => trackingSessions.id, { onDelete: 'cascade' }),
+    clientPointId: uuid('client_point_id').notNull(),
     position: pointGeometry().notNull(),
     recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),
@@ -34,5 +35,6 @@ export const gpsPoints = pgTable('gps_points', {
     accuracyMeters: real('accuracy_meters'),
 }, (table) => [
     index('gps_points_session_recorded_idx').on(table.sessionId, table.recordedAt),
+    uniqueIndex('gps_points_session_client_point_idx').on(table.sessionId, table.clientPointId),
     index('gps_points_position_gist_idx').using('gist', table.position),
 ]);
