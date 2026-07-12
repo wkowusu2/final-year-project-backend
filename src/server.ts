@@ -32,7 +32,11 @@ async function startServer(){
 
 }
 
-startServer();
+startServer().catch(async (error) => {
+  console.error('Server startup failed:', error);
+  await closeDb();
+  process.exitCode = 1;
+});
 
 process.on("SIGINT", async () => {
   await closeDb();

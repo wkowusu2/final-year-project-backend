@@ -24,34 +24,36 @@ function createPool(){
 
 export async function dbconnect() {
     try {
-        if(!pool){
+        if (!pool) {
             pool = createPool();
         }
-        await pool.query("SELECT 1");
-    } catch (error: any) {
-        console.log('Some error occurred when connecting to db: ', error)
-        await pool?.end();
+        await pool.query('SELECT 1');
+        db = drizzle(pool, { schema });
+    } catch (error) {
+        const failedPool = pool;
         pool = null;
-    } 
+        db = null;
+        await failedPool?.end();
+        throw error;
+    }
 }
 
-export function getDb():NodePgDatabase<typeof schema>  {
-    if(!db){
-        if(!pool){
-            pool = createPool();
-        }
-
-        db = drizzle(pool, { schema });
+export function getDb(): NodePgDatabase<typeof schema> {
+    if (!db) {
+        throw new Error('Database has not been initialized');
     }
     return db;
 }
 
 export async function closeDb() {
-    if(!pool){
-        return ;
-    }
-    console.log('Closing pool...')
-    await pool.end();
+    const activePool = pool;
     pool = null;
     db = null;
+
+    if (!activePool) {
+        return;
+    }
+
+    console.log('Closing pool...');
+    await activePool.end();
 }

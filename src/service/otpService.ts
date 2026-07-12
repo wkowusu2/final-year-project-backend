@@ -1,9 +1,5 @@
-export function generateOtp(){
-    let otp = ''; 
+import { randomInt } from 'node:crypto';
 
-    for(let i = 0; i <= 5; i++){
-        let number = Math.floor(Math.random() * 10);
-        otp+= number
-    }
-    return otp;
+export function generateOtp() {
+    return randomInt(0, 1_000_000).toString().padStart(6, '0');
 }

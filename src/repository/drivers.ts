@@ -4,11 +4,9 @@ import { drivers } from "../schema/driverProfiles.js";
 import { Driver } from "../types/driver.js";
 import { errorReturnDb, successReturnDb } from "../utils/db.utils.js";
 
-const db = getDb();
-
-
 export async function createDriverProfileDb(details: Driver) {
     try {
+        const db = getDb();
         const newDriver = await db.insert(drivers).values({id: details.userId ,fullName: details.fullName, phone: details.phone, email: details?.email}).returning({fullName: drivers.fullName, phone: drivers.phone, email: drivers.email, doneOnBoarding: drivers.onboardingDone})
         if(newDriver.length === 0) throw new Error('Failed to create driver');
         return successReturnDb(newDriver[0]);
@@ -20,6 +18,7 @@ export async function createDriverProfileDb(details: Driver) {
 
 export async function getDriverProfileById(userId: string) {
     try {
+        const db = getDb();
         const driver = await db.select({fullName: drivers.fullName, phone: drivers.phone, email: drivers.email}).from(drivers).where(eq(drivers.id, userId));
         if(driver.length === 0) throw new Error('Driver does not exist');
 
@@ -32,6 +31,7 @@ export async function getDriverProfileById(userId: string) {
 
 export async function getDriverProfileByPhone(phone: string) {
     try {
+        const db = getDb();
         const driver = await db.select({fullName: drivers.fullName, phone: drivers.phone, email: drivers.email}).from(drivers).where(eq(drivers.phone, phone));
         if(driver.length === 0) throw new Error('Driver does not exist');
 
@@ -44,6 +44,7 @@ export async function getDriverProfileByPhone(phone: string) {
 
 export async function hasDriverProfileDb(phone: string) {
     try {
+        const db = getDb();
         let hasProfile = true;
         const driver = await db.select({fullName: drivers.fullName, phone: drivers.phone, email: drivers.email, isOnboardingDone: drivers.onboardingDone}).from(drivers).where(eq(drivers.phone, phone));
         if(driver.length === 0){
@@ -62,6 +63,7 @@ export async function hasDriverProfileDb(phone: string) {
 
 export async function deleteDriver(userId: string) {
     try {
+        const db = getDb();
         const now = new Date();
         await db.update(drivers).set({updatedAt: now, deleted: true}).where(eq(drivers.id, userId));
         return successReturnDb("Account deleted successfully")
@@ -73,6 +75,7 @@ export async function deleteDriver(userId: string) {
 
 export async function completeOnboarding(userId: string) {
     try {
+        const db = getDb();
         const now = new Date();
         const onBoarding = await db.update(drivers).set({updatedAt: now, onboardingDone: true}).where(eq(drivers.id, userId)).returning({doneOnboarding: drivers.onboardingDone});
         return successReturnDb(onBoarding[0]);
