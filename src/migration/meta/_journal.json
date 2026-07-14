@@ -57,6 +57,13 @@
       "when": 1783860470768,
       "tag": "0007_lucky_blacklash",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783996800000,
+      "tag": "0008_home_dashboard_incidents",
+      "breakpoints": true
     }
   ]
 }

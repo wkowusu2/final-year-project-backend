@@ -5,6 +5,7 @@ import { OtpToBeStored, VerifyBody } from "../../types/auth.js";
 import { hasDriverProfileDb } from "../../repository/drivers.js";
 import { generateTokens } from "../../service/jwtService.js";
 import { hashToken } from "../../utils/cryptoHelper.js";
+import { sendSms } from "../../service/smsService.js";
 // import { sendSms } from "../../service/smsService.js";
 
 export async function sendOtp(req: Request, res: Response) {
@@ -22,10 +23,10 @@ export async function sendOtp(req: Request, res: Response) {
         const saveOtpRes = await saveOtp(obj);
         if(!saveOtpRes.success) throw new Error(saveOtpRes.error);
         //TODO: send the otp
-        // const { error, success } = await sendSms({otp: otp, phone: phone});
-        // if(!success){
-        //     console.log('Failed to send sms with the error: ', error)
-        // }
+        const { error, success } = await sendSms({otp: otp, phone: phone});
+        if(!success){
+            console.log('Failed to send sms with the error: ', error)
+        }
         //send the response
         return res.status(200).json({success: true, data: "Otp sent", error: null})
     } catch (error: any) {
