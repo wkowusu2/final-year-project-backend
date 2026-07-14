@@ -21,8 +21,16 @@ type IncidentRow = {
   status: 'pending' | 'verified' | 'resolved';
   roadName: string;
   city: string;
-  createdAt: Date;
+  createdAt: Date | string;
 };
+
+function toIsoTimestamp(value: Date | string) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error('Database returned an invalid incident timestamp');
+  }
+  return date.toISOString();
+}
 
 export async function getHomeDashboard(driverId: string) {
   const db = getDb();
@@ -113,7 +121,7 @@ export async function getHomeDashboard(driverId: string) {
     },
     incidents: incidentsResult.rows.map((incident) => ({
       ...incident,
-      createdAt: incident.createdAt.toISOString(),
+      createdAt: toIsoTimestamp(incident.createdAt),
     })),
   };
 }

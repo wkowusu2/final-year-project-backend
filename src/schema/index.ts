@@ -5,4 +5,6 @@ export { users } from './users.js';
 export { drivers } from './driverProfiles.js'
 export { gpsPoints, trackingSessions } from './tracking.js';
 export { incidents, incidentSeverity, incidentStatus } from './incidents.js';
+export { incidentConfirmations } from './incidentConfirmations.js';
+export { incidentMedia } from './incidentMedia.js';
 export { planetOsmLine, planetOsmPoint, planetOsmPolygon, planetOsmRoads } from './osm.js';

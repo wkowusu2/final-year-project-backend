@@ -40,10 +40,16 @@ export const config = {
     arkesel: {
         apiKey: getSpecificEnvValue('ARKESEL_API_KEY'),
         baseUrl: getSpecificEnvValue('ARKESEL_BASE_URL')
-    }
+    },
 
     // hubtel: {
     //     clientId: getSpecificEnvValue("HUBTEL_CLIENT_ID"),
     //     clientSecret: getSpecificEnvValue("HUBTEL_CLIENT_SECRET")
     // },
+
+    cloudinary: {
+        cloudName: getSpecificEnvValue('CLOUDINARY_CLOUD_NAME'),
+        apiKey: getSpecificEnvValue('CLOUDINARY_API_KEY'),
+        apiSecret: getSpecificEnvValue('CLOUDINARY_API_SECRET')
+    }
 }
