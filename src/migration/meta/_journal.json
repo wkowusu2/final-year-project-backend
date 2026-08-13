@@ -85,6 +85,20 @@
       "when": 1783997100000,
       "tag": "0011_incident_media_cloudinary",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1783997200000,
+      "tag": "0012_incidents_map_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1783997300000,
+      "tag": "0013_gps_road_matches",
+      "breakpoints": true
     }
   ]
 }

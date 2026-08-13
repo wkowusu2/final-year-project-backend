@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 import { deleteIncidentImage, uploadIncidentImage } from '../../configs/cloudinary.js';
-import { confirmIncident, createIncident, createIncidentMedia, getDriverIncidents, getIncidentDetail, IncidentStatusFilter } from '../../repository/incidents.js';
+import { confirmIncident, createIncident, createIncidentMedia, getDriverIncidents, getIncidentDetail, getMapIncidents, IncidentStatusFilter } from '../../repository/incidents.js';
 
 const severityValues = new Set(['low', 'medium', 'high', 'critical']);
 
@@ -84,6 +84,21 @@ export async function getMyIncidents(req: Request, res: Response) {
   } catch (error) {
     console.error('Unable to load driver incidents:', error);
     return res.status(500).json({ success: false, data: null, error: 'Unable to load reports' });
+  }
+}
+
+export async function getIncidentsForMap(req: Request, res: Response) {
+  try {
+    const keys = ['west', 'south', 'east', 'north'] as const;
+    const bounds = Object.fromEntries(keys.map((key) => [key, Number(req.query[key])])) as Record<(typeof keys)[number], number>;
+    if (!keys.every((key) => Number.isFinite(bounds[key])) || bounds.west >= bounds.east || bounds.south >= bounds.north || bounds.west < -180 || bounds.east > 180 || bounds.south < -90 || bounds.north > 90) {
+      return res.status(400).json({ success: false, data: null, error: 'Invalid map bounds' });
+    }
+    const incidents = await getMapIncidents(bounds);
+    return res.status(200).json({ success: true, data: { incidents }, error: null });
+  } catch (error) {
+    console.error('Unable to load map incidents:', error);
+    return res.status(500).json({ success: false, data: null, error: 'Unable to load map incidents' });
   }
 }
 

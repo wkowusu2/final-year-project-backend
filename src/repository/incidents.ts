@@ -38,6 +38,19 @@ export async function createIncidentMedia(input: { incidentId: string; storagePa
 
 export type IncidentStatusFilter = 'pending' | 'verified' | 'resolved';
 
+export async function getMapIncidents(bounds: { west: number; south: number; east: number; north: number }) {
+  const result = await getDb().execute<IncidentListRow & { latitude: number; longitude: number }>(sql`
+    SELECT id, type, severity, status, road_name AS "roadName", city, latitude, longitude, created_at AS "createdAt"
+    FROM incidents
+    WHERE longitude BETWEEN ${bounds.west} AND ${bounds.east}
+      AND latitude BETWEEN ${bounds.south} AND ${bounds.north}
+      AND status <> 'resolved'
+    ORDER BY CASE status WHEN 'verified' THEN 0 ELSE 1 END, created_at DESC
+    LIMIT 200
+  `);
+  return result.rows.map((incident) => ({ ...incident, createdAt: toIsoTimestamp(incident.createdAt) }));
+}
+
 type IncidentListRow = {
   id: string;
   type: string;
