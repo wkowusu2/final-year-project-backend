@@ -28,6 +28,14 @@ type RoadRow = {
     geometry: { type: 'LineString'; coordinates: [number, number][] } | null;
 };
 
+type TrafficRow = {
+    osmId: string;
+    sampleCount: number | string;
+    driverCount: number | string;
+    medianSpeedKph: number | string | null;
+    lastObservedAt: Date | string;
+};
+
 export async function getRoadsInViewport(west: number, south: number, east: number, north: number) {
     try {
         const db = getDb();
@@ -78,4 +86,47 @@ export async function getRoadsInViewport(west: number, south: number, east: numb
         console.error('Error from getRoadsInViewport:', error);
         return errorReturnDb(error);
     }
+}
+
+/** Aggregated only: no individual driver locations leave the server. */
+export async function getTrafficInViewport(west: number, south: number, east: number, north: number) {
+    const db = getDb();
+    const result = await db.execute<TrafficRow>(sql`
+        SELECT
+            gps_points.matched_road_osm_id::text AS "osmId",
+            COUNT(*) AS "sampleCount",
+            COUNT(DISTINCT tracking_sessions.driver_id) AS "driverCount",
+            percentile_cont(0.5) WITHIN GROUP (ORDER BY gps_points.speed_mps * 3.6)
+                FILTER (WHERE gps_points.speed_mps IS NOT NULL) AS "medianSpeedKph",
+            MAX(gps_points.recorded_at) AS "lastObservedAt"
+        FROM gps_points
+        INNER JOIN tracking_sessions ON tracking_sessions.id = gps_points.session_id
+        WHERE gps_points.matched_road_osm_id IS NOT NULL
+          AND gps_points.recorded_at >= now() - interval '30 minutes'
+          AND ST_X(gps_points.position) BETWEEN ${west} AND ${east}
+          AND ST_Y(gps_points.position) BETWEEN ${south} AND ${north}
+        GROUP BY gps_points.matched_road_osm_id
+        HAVING COUNT(*) FILTER (WHERE gps_points.speed_mps IS NOT NULL) >= 3
+        ORDER BY "sampleCount" DESC
+        LIMIT 300
+    `);
+
+    return result.rows.map((road) => {
+        const medianSpeedKph = road.medianSpeedKph == null ? null : Number(road.medianSpeedKph);
+        const trafficLevel = medianSpeedKph == null
+            ? 'unknown'
+            : medianSpeedKph < 12 ? 'severe'
+                : medianSpeedKph < 25 ? 'heavy'
+                    : medianSpeedKph < 40 ? 'moderate'
+                        : 'free';
+        const observedAt = road.lastObservedAt instanceof Date ? road.lastObservedAt : new Date(road.lastObservedAt);
+        return {
+            osmId: road.osmId,
+            sampleCount: Number(road.sampleCount),
+            driverCount: Number(road.driverCount),
+            medianSpeedKph,
+            trafficLevel,
+            lastObservedAt: observedAt.toISOString(),
+        };
+    });
 }
