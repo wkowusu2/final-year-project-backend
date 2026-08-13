@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import { getDb } from '../configs/db.config.js';
+import { incidents } from '../schema/incidents.js';
 
 type MetricsRow = {
   activeDrivers: number | string;
@@ -121,4 +123,12 @@ export async function getAdminDashboard(windowMinutes: number) {
       createdAt: isoTimestamp(incident.createdAt),
     })),
   };
+}
+
+export async function updateAdminIncidentStatus(incidentId: string, status: 'verified' | 'resolved') {
+  const rows = await getDb().update(incidents)
+    .set({ status, updatedAt: new Date() })
+    .where(eq(incidents.id, incidentId))
+    .returning({ id: incidents.id, status: incidents.status, updatedAt: incidents.updatedAt });
+  return rows[0] ?? null;
 }
