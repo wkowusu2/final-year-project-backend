@@ -51,5 +51,9 @@ export const config = {
         cloudName: getSpecificEnvValue('CLOUDINARY_CLOUD_NAME'),
         apiKey: getSpecificEnvValue('CLOUDINARY_API_KEY'),
         apiSecret: getSpecificEnvValue('CLOUDINARY_API_SECRET')
+    },
+
+    routing: {
+        valhallaBaseUrl: getOptionalEnvValue('ROUTING_BASE_URL', 'http://localhost:8002')
     }
 }

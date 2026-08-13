@@ -9,6 +9,7 @@ import roadsRouter from './routes/map/roads.route.js';
 import trackingRouter from './routes/tracking/tracking.route.js';
 import incidentsRouter from './routes/incidents/incidents.route.js';
 import adminRouter from './routes/admin/dashboard.route.js';
+import routeIntelligenceRouter from './routes/routes/routeIntelligence.route.js';
 import { requestLogger } from './service/logger/requestLogger.js';
 
 
@@ -35,6 +36,7 @@ async function startServer(){
     app.use(API_PREFIX+"/tracking", trackingRouter);
     app.use(API_PREFIX+"/incidents", incidentsRouter);
     app.use(API_PREFIX+"/admin", adminRouter);
+    app.use(API_PREFIX+"/routes", routeIntelligenceRouter);
 
     
     app.listen(port, () => {
