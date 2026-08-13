@@ -5,6 +5,7 @@ export type RouteGeometry = { type: 'LineString'; coordinates: [number, number][
 
 type RouteTrafficRow = { sampleCount: number | string; medianSpeedKph: number | string | null; matchedRoadCount: number | string };
 type RouteIncidentRow = { id: string; type: string; severity: string; roadName: string };
+export type RouteAdvisory = { id: string; title: string; type: string; impact: string; roadName: string };
 
 function routeGeoJson(geometry: RouteGeometry) {
   return JSON.stringify(geometry);
@@ -50,6 +51,32 @@ export async function getRouteIncidents(geometry: RouteGeometry) {
       )
     ORDER BY created_at DESC
     LIMIT 5
+  `);
+  return result.rows;
+}
+
+/** Active government notices whose explicitly affected OSM road is part of this route. */
+export async function getRouteAdvisories(geometry: RouteGeometry) {
+  const result = await getDb().execute<RouteAdvisory>(sql`
+    WITH route AS (
+      SELECT ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON(${routeGeoJson(geometry)}), 4326), 3857) AS geometry
+    )
+    SELECT DISTINCT ON (road_advisories.id)
+      road_advisories.id,
+      road_advisories.title,
+      road_advisories.type,
+      road_advisories.impact,
+      road_advisories.road_name AS "roadName"
+    FROM road_advisories
+    INNER JOIN planet_osm_roads
+      ON planet_osm_roads.osm_id = road_advisories.affected_road_osm_id
+    CROSS JOIN route
+    WHERE road_advisories.status = 'active'
+      AND road_advisories.starts_at <= now()
+      AND (road_advisories.ends_at IS NULL OR road_advisories.ends_at >= now())
+      AND ST_Intersects(planet_osm_roads.way, route.geometry)
+    ORDER BY road_advisories.id, road_advisories.starts_at DESC
+    LIMIT 10
   `);
   return result.rows;
 }

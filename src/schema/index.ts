@@ -9,4 +9,5 @@ export { incidentConfirmations } from './incidentConfirmations.js';
 export { incidentMedia } from './incidentMedia.js';
 export { admins } from './admins.js';
 export { adminRefreshTokens } from './adminRefreshTokens.js';
+export { roadAdvisories } from './roadAdvisories.js';
 export { planetOsmLine, planetOsmPoint, planetOsmPolygon, planetOsmRoads } from './osm.js';

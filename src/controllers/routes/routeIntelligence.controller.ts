@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { config } from '../../configs/envImplement.js';
-import { getRouteIncidents, getRouteTraffic, RouteGeometry } from '../../repository/routeIntelligence.js';
+import { getRouteAdvisories, getRouteIncidents, getRouteTraffic, RouteGeometry } from '../../repository/routeIntelligence.js';
 
 type ValhallaTrip = { summary: { time: number; length: number }; legs: { shape: string }[] };
 type ValhallaResponse = { trip?: ValhallaTrip; alternates?: { trip: ValhallaTrip }[]; error?: string };
@@ -76,11 +76,18 @@ export async function getRouteIntelligence(req: Request, res: Response) {
 
     const routes = await Promise.all(valhallaRoutes.slice(0, 3).map(async (route, index) => {
       const geometry = decodeValhallaTrip(route);
-      const [traffic, incidents] = await Promise.all([getRouteTraffic(geometry), getRouteIncidents(geometry)]);
+      const [traffic, incidents, advisories] = await Promise.all([
+        getRouteTraffic(geometry),
+        getRouteIncidents(geometry),
+        getRouteAdvisories(geometry),
+      ]);
       const speedMultiplier = traffic.medianSpeedKph == null ? 1 : Math.min(3, Math.max(0.85, 45 / Math.max(traffic.medianSpeedKph, 10)));
       const incidentPenaltySeconds = incidents.length * 120;
+      const advisoryPenaltySeconds = advisories.reduce((total, advisory) => total + (
+        advisory.type === 'road_closure' ? 600 : advisory.impact === 'high' ? 300 : 120
+      ), 0);
       const baseDurationSeconds = Math.round(route.summary.time);
-      const estimatedDurationSeconds = Math.round(baseDurationSeconds * speedMultiplier + incidentPenaltySeconds);
+      const estimatedDurationSeconds = Math.round(baseDurationSeconds * speedMultiplier + incidentPenaltySeconds + advisoryPenaltySeconds);
       return {
         id: `route-${index + 1}`,
         geometry,
@@ -92,6 +99,7 @@ export async function getRouteIntelligence(req: Request, res: Response) {
         trafficSampleCount: traffic.sampleCount,
         matchedRoadCount: traffic.matchedRoadCount,
         incidents,
+        advisories,
       };
     }));
     routes.sort((a, b) => a.estimatedDurationSeconds - b.estimatedDurationSeconds);
