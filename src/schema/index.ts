@@ -7,4 +7,6 @@ export { gpsPoints, trackingSessions } from './tracking.js';
 export { incidents, incidentSeverity, incidentStatus } from './incidents.js';
 export { incidentConfirmations } from './incidentConfirmations.js';
 export { incidentMedia } from './incidentMedia.js';
+export { admins } from './admins.js';
+export { adminRefreshTokens } from './adminRefreshTokens.js';
 export { planetOsmLine, planetOsmPoint, planetOsmPolygon, planetOsmRoads } from './osm.js';

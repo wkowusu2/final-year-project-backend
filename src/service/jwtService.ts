@@ -3,6 +3,7 @@ import { generateRefreshToken } from '../utils/cryptoHelper.js';
 import { saveRefreshToken } from '../repository/otp.js';
 import { refreshTokenDetailType } from '../types/auth.js';
 import { config } from '../configs/envImplement.js';
+import { saveAdminRefreshToken } from '../repository/adminAuth.js';
 
 const {sign} = jwtPkg;
 
@@ -30,5 +31,17 @@ export async function generateTokens(userId: string, phone: string, role: string
  } catch (error: any) {
     console.log("Error from creating tokens")
     return {_success: false, _error: error.message}
+ }
+}
+
+export async function generateAdminTokens(adminId: string, email: string): Promise<{_success: boolean, _error: string | null, _data?: {access_token: string, refresh_token: string }}> {
+ try {
+    const accessToken = sign({ sub: adminId, email, role: 'admin' }, config.jwt.secret, { expiresIn: 15 * 60 });
+    const { actulToken, hashedToken } = generateRefreshToken();
+    await saveAdminRefreshToken(adminId, hashedToken);
+    return { _success: true, _error: null, _data: { access_token: accessToken, refresh_token: actulToken } };
+ } catch (error: any) {
+    console.log('Error from creating admin tokens');
+    return { _success: false, _error: error.message };
  }
 }

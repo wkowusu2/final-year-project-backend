@@ -3,7 +3,8 @@ import { refreshToken } from "../schema/refreshTokens.js"
 import { JwtPayload } from "jsonwebtoken";
 
 export type JwtPayloadType = JwtPayload & {
-    phone: string,
+    phone?: string,
+    email?: string,
     role: string,
 }
 

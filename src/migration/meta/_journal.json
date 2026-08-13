@@ -99,6 +99,13 @@
       "when": 1783997300000,
       "tag": "0013_gps_road_matches",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1783997400000,
+      "tag": "0014_admin_auth",
+      "breakpoints": true
     }
   ]
 }
