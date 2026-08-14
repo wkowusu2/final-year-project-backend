@@ -36,6 +36,34 @@ type TrafficRow = {
     lastObservedAt: Date | string;
 };
 
+type SelectedRoadRow = {
+    osmId: string;
+    name: string | null;
+    ref: string | null;
+    highway: string;
+    latitude: number | string;
+    longitude: number | string;
+};
+
+/** Verifies that an advisory points to a road supplied by the road-picker map. */
+export async function getDrivableRoadByOsmId(osmId: string) {
+    const result = await getDb().execute<SelectedRoadRow>(sql`
+        SELECT
+            roads.osm_id::text AS "osmId",
+            roads.name,
+            roads.ref,
+            roads.highway,
+            ST_Y(ST_Transform(ST_LineInterpolatePoint(roads.way, 0.5), 4326)) AS latitude,
+            ST_X(ST_Transform(ST_LineInterpolatePoint(roads.way, 0.5), 4326)) AS longitude
+        FROM planet_osm_roads AS roads
+        WHERE roads.osm_id = ${osmId}::bigint
+          AND roads.highway IN (${sql.join(DRIVABLE_HIGHWAY_TYPES.map((highway) => sql`${highway}`), sql`, `)})
+        LIMIT 1
+    `);
+    const road = result.rows[0];
+    return road ? { ...road, latitude: Number(road.latitude), longitude: Number(road.longitude) } : null;
+}
+
 export async function getRoadsInViewport(west: number, south: number, east: number, north: number) {
     try {
         const db = getDb();

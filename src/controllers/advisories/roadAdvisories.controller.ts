@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AdvisoryInput, AdvisoryStatus, createRoadAdvisory, listAdminAdvisories, listDriverAdvisories, updateRoadAdvisory } from '../../repository/roadAdvisories.js';
+import { getDrivableRoadByOsmId } from '../../repository/roads.js';
 
 const statuses = new Set<AdvisoryStatus>(['planned', 'active', 'completed', 'cancelled']);
 const impacts = new Set(['low', 'moderate', 'high']);
@@ -21,14 +22,27 @@ function parseInput(body: unknown): AdvisoryInput {
   if (typeof value.status !== 'string' || !statuses.has(value.status as AdvisoryStatus)) throw new Error('Invalid advisory status');
   if (typeof value.impact !== 'string' || !impacts.has(value.impact)) throw new Error('Invalid advisory impact');
   const osmId = value.affectedRoadOsmId == null || value.affectedRoadOsmId === '' ? null : String(value.affectedRoadOsmId);
-  if (osmId && !/^\d+$/.test(osmId)) throw new Error('Affected OSM road ID must be numeric');
+  if (!osmId || !/^\d+$/.test(osmId)) throw new Error('Select a valid mapped road for this advisory');
   const latitude = value.latitude == null || value.latitude === '' ? null : Number(value.latitude);
   const longitude = value.longitude == null || value.longitude === '' ? null : Number(value.longitude);
   if ((latitude != null && (!Number.isFinite(latitude) || latitude < -90 || latitude > 90)) || (longitude != null && (!Number.isFinite(longitude) || longitude < -180 || longitude > 180))) throw new Error('Invalid advisory coordinates');
   return { title: value.title.trim(), description: value.description.trim(), type: value.type, status: value.status as AdvisoryStatus, impact: value.impact as 'low' | 'moderate' | 'high', affectedRoadOsmId: osmId, roadName: value.roadName.trim(), city: value.city.trim(), latitude, longitude, startsAt: parseDate(value.startsAt, 'startsAt')!, endsAt: parseDate(value.endsAt, 'endsAt', true) };
 }
 
+async function validatedInput(body: unknown) {
+  const input = parseInput(body);
+  const road = await getDrivableRoadByOsmId(input.affectedRoadOsmId!);
+  if (!road) throw new Error('The selected road no longer exists in the mapped road network');
+  return {
+    ...input,
+    affectedRoadOsmId: road.osmId,
+    roadName: road.name ?? road.ref ?? input.roadName,
+    latitude: road.latitude,
+    longitude: road.longitude,
+  };
+}
+
 export async function getDriverAdvisories(_req: Request, res: Response) { try { return res.status(200).json({ success: true, data: { advisories: await listDriverAdvisories() }, error: null }); } catch { return res.status(500).json({ success: false, data: null, error: 'Unable to load road advisories' }); } }
 export async function getAdminAdvisories(_req: Request, res: Response) { try { return res.status(200).json({ success: true, data: { advisories: await listAdminAdvisories() }, error: null }); } catch { return res.status(500).json({ success: false, data: null, error: 'Unable to load road advisories' }); } }
-export async function postAdminAdvisory(req: Request, res: Response) { try { const adminId = res.locals.user?.sub; if (typeof adminId !== 'string') return res.status(401).json({ success: false, data: null, error: 'Administrator identity is required' }); const advisory = await createRoadAdvisory(parseInput(req.body), adminId); return res.status(201).json({ success: true, data: { advisory }, error: null }); } catch (error) { return res.status(400).json({ success: false, data: null, error: error instanceof Error ? error.message : 'Unable to create advisory' }); } }
-export async function patchAdminAdvisory(req: Request, res: Response) { try { if (typeof req.params.advisoryId !== 'string') throw new Error('Invalid advisory'); const advisory = await updateRoadAdvisory(req.params.advisoryId, parseInput(req.body)); if (!advisory) return res.status(404).json({ success: false, data: null, error: 'Advisory not found' }); return res.status(200).json({ success: true, data: { advisory }, error: null }); } catch (error) { return res.status(400).json({ success: false, data: null, error: error instanceof Error ? error.message : 'Unable to update advisory' }); } }
+export async function postAdminAdvisory(req: Request, res: Response) { try { const adminId = res.locals.user?.sub; if (typeof adminId !== 'string') return res.status(401).json({ success: false, data: null, error: 'Administrator identity is required' }); const advisory = await createRoadAdvisory(await validatedInput(req.body), adminId); return res.status(201).json({ success: true, data: { advisory }, error: null }); } catch (error) { return res.status(400).json({ success: false, data: null, error: error instanceof Error ? error.message : 'Unable to create advisory' }); } }
+export async function patchAdminAdvisory(req: Request, res: Response) { try { if (typeof req.params.advisoryId !== 'string') throw new Error('Invalid advisory'); const advisory = await updateRoadAdvisory(req.params.advisoryId, await validatedInput(req.body)); if (!advisory) return res.status(404).json({ success: false, data: null, error: 'Advisory not found' }); return res.status(200).json({ success: true, data: { advisory }, error: null }); } catch (error) { return res.status(400).json({ success: false, data: null, error: error instanceof Error ? error.message : 'Unable to update advisory' }); } }
