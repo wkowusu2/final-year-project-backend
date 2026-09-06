@@ -5,6 +5,7 @@ import { generateAdminTokens } from '../../service/jwtService.js';
 import { hashToken } from '../../utils/cryptoHelper.js';
 
 export async function adminLogin(req: Request, res: Response) {
+  res.set('Cache-Control', 'no-store');
   const { email, password } = req.body ?? {};
   if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) return res.status(400).json({ success: false, data: null, error: 'Email and password are required' });
   try {
@@ -20,6 +21,7 @@ export async function adminLogin(req: Request, res: Response) {
 }
 
 export async function refreshAdminTokens(req: Request, res: Response) {
+  res.set('Cache-Control', 'no-store');
   const { refreshToken, adminId } = req.body ?? {};
   if (typeof refreshToken !== 'string' || typeof adminId !== 'string') return res.status(400).json({ success: false, data: null, error: 'Refresh token and administrator identity are required' });
   try {
