@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 
 import { getDb } from '../configs/db.config.js';
 import { createIncident } from '../repository/incidents.js';
-import { completeSession, insertPoints, startOrGetActiveSession, TrackingPointInput } from '../repository/tracking.js';
+import { insertPoints, startOrGetActiveSession, TrackingPointInput } from '../repository/tracking.js';
 
 const SIMULATION_DRIVER_IDS = Array.from({ length: 10 }, (_, index) => `10000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`);
 const KNUST = { latitude: 6.6752, longitude: -1.5716 };
@@ -15,6 +15,24 @@ type SimulatedDriver = { driverId: string; sessionId: string; road: Road; cursor
 type State = { scenario: Scenario; startedAt: string; drivers: SimulatedDriver[]; timer: NodeJS.Timeout; ticking: boolean; reportId: string | null };
 
 let state: State | null = null;
+
+/**
+ * Simulation identities are reserved exclusively for presentation data. Removing
+ * their sessions cascades to GPS points, so no generated observations remain in
+ * the traffic window after a demo is stopped or restarted.
+ */
+async function clearSimulationData() {
+  const driverIds = sql.join(SIMULATION_DRIVER_IDS.map((driverId) => sql`${driverId}::uuid`), sql`, `);
+  await getDb().execute(sql`
+    DELETE FROM incidents
+    WHERE reporter_driver_id IN (${driverIds})
+      AND type = 'Simulated traffic incident'
+  `);
+  await getDb().execute(sql`
+    DELETE FROM tracking_sessions
+    WHERE driver_id IN (${driverIds})
+  `);
+}
 
 function speedFor(scenario: Scenario, index: number) {
   if (scenario === 'normal') return 12 + (index % 3); // 43–50 km/h
@@ -72,6 +90,8 @@ export function simulationStatus() {
 
 export async function startSimulation(scenario: Scenario) {
   if (state) return simulationStatus();
+  // Also recover cleanly if the server was restarted during an earlier demo.
+  await clearSimulationData();
   const roads = await findKnustRoads();
   const sessions = await Promise.all(SIMULATION_DRIVER_IDS.map((driverId) => startOrGetActiveSession(driverId, new Date())));
   if (sessions.some((session) => !session)) throw new Error('Could not start all simulation tracking sessions');
@@ -89,10 +109,8 @@ export async function startSimulation(scenario: Scenario) {
 }
 
 export async function stopSimulation() {
-  if (!state) return simulationStatus();
-  const current = state;
-  clearInterval(current.timer);
+  if (state) clearInterval(state.timer);
   state = null;
-  await Promise.all(current.drivers.map((driver) => completeSession(driver.driverId, driver.sessionId, new Date())));
+  await clearSimulationData();
   return simulationStatus();
 }
