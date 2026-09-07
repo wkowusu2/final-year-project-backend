@@ -40,6 +40,12 @@ function speedFor(scenario: Scenario, index: number) {
   return index % 3 === 0 ? 1.8 : 5; // incident bottleneck
 }
 
+function roadConditionFor(scenario: Scenario, index: number) {
+  if (scenario === 'normal') return { trafficLevel: index % 3 === 2 ? 'moderate' : 'free', speedKph: 46 - index * 3 };
+  if (scenario === 'rush_hour') return { trafficLevel: index % 3 === 2 ? 'moderate' : 'heavy', speedKph: 16 - index * 2 };
+  return { trafficLevel: index === 0 ? 'severe' : 'heavy', speedKph: index === 0 ? 6 : 18 };
+}
+
 async function findKnustRoads() {
   const result = await getDb().execute<{ geometry: Road | null }>(sql`
     WITH area AS (
@@ -85,7 +91,13 @@ async function emitPoints() {
 }
 
 export function simulationStatus() {
-  return state ? { running: true, scenario: state.scenario, startedAt: state.startedAt, driverCount: state.drivers.length, reportId: state.reportId, center: KNUST } : { running: false, scenario: null, startedAt: null, driverCount: 0, reportId: null, center: KNUST };
+  if (!state) return { running: false, scenario: null, startedAt: null, driverCount: 0, reportId: null, center: KNUST, roads: [] };
+  const activeSimulation = state;
+  const uniqueRoads = [...new Set(activeSimulation.drivers.map((driver) => driver.road))];
+  return {
+    running: true, scenario: activeSimulation.scenario, startedAt: activeSimulation.startedAt, driverCount: activeSimulation.drivers.length, reportId: activeSimulation.reportId, center: KNUST,
+    roads: uniqueRoads.map((road, index) => ({ ...roadConditionFor(activeSimulation.scenario, index), coordinates: road.coordinates, hasIncident: activeSimulation.scenario === 'incident' && index === 0 })),
+  };
 }
 
 export async function startSimulation(scenario: Scenario) {
