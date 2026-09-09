@@ -120,6 +120,13 @@
       "when": 1788725346298,
       "tag": "0016_simulation_drivers",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788725346300,
+      "tag": "0017_simulation_driver_capacity",
+      "breakpoints": true
     }
   ]
 }

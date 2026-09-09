@@ -23,6 +23,7 @@ type IncidentRow = {
   city: string;
   createdAt: Date | string;
 };
+type AdvisoryRow = { id: string; title: string; description: string; type: string; roadName: string; city: string; startsAt: Date | string };
 
 function toIsoTimestamp(value: Date | string) {
   const date = value instanceof Date ? value : new Date(value);
@@ -106,6 +107,13 @@ export async function getHomeDashboard(driverId: string) {
     ORDER BY created_at DESC
     LIMIT 3
   `);
+  const advisoriesResult = await db.execute<AdvisoryRow>(sql`
+    SELECT id, title, description, type, road_name AS "roadName", city, starts_at AS "startsAt"
+    FROM road_advisories
+    WHERE status = 'active' AND starts_at <= now() AND (ends_at IS NULL OR ends_at >= now())
+    ORDER BY starts_at DESC
+    LIMIT 20
+  `);
 
   return {
     driver: {
@@ -123,5 +131,6 @@ export async function getHomeDashboard(driverId: string) {
       ...incident,
       createdAt: toIsoTimestamp(incident.createdAt),
     })),
+    advisories: advisoriesResult.rows.map((advisory) => ({ ...advisory, startsAt: toIsoTimestamp(advisory.startsAt) })),
   };
 }
