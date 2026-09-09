@@ -2,16 +2,18 @@ import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 
 import { getDb } from '../configs/db.config.js';
+import { AYEDUASE_SIMULATION_CORRIDOR } from '../configs/simulationCorridors.js';
 import { createIncident } from '../repository/incidents.js';
 import { insertPoints, startOrGetActiveSession, TrackingPointInput } from '../repository/tracking.js';
 
 const SIMULATION_DRIVER_IDS = Array.from({ length: 10 }, (_, index) => `10000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`);
+const DRIVERS_PER_CORRIDOR = SIMULATION_DRIVER_IDS.length / 2;
 const KNUST = { latitude: 6.6752, longitude: -1.5716 };
 const TICK_MS = 5_000;
 
 type Scenario = 'normal' | 'rush_hour' | 'incident';
 type Road = { coordinates: [number, number][] };
-type SimulatedDriver = { driverId: string; sessionId: string; road: Road; cursor: number };
+type SimulatedDriver = { driverId: string; sessionId: string; road: Road; cursor: number; corridor: 'knust' | 'ayeduase' };
 type State = { scenario: Scenario; startedAt: string; drivers: SimulatedDriver[]; timer: NodeJS.Timeout; ticking: boolean; reportId: string | null };
 
 let state: State | null = null;
@@ -61,7 +63,7 @@ async function findKnustRoads() {
     ORDER BY ST_Length(roads.way) DESC
     LIMIT 4
   `);
-  const roads = result.rows.flatMap((row) => row.geometry?.coordinates && row.geometry.coordinates.length > 3 ? [row.geometry] : []);
+  const roads = result.rows.flatMap((row) => row.geometry?.coordinates && row.geometry.coordinates.length >= 2 ? [row.geometry] : []);
   if (roads.length < 1) throw new Error('No suitable KNUST road segments were found for the simulation');
   return roads;
 }
@@ -96,6 +98,7 @@ export function simulationStatus() {
   const uniqueRoads = [...new Set(activeSimulation.drivers.map((driver) => driver.road))];
   return {
     running: true, scenario: activeSimulation.scenario, startedAt: activeSimulation.startedAt, driverCount: activeSimulation.drivers.length, reportId: activeSimulation.reportId, center: KNUST,
+    corridorDriverCounts: { knust: activeSimulation.drivers.filter((driver) => driver.corridor === 'knust').length, ayeduase: activeSimulation.drivers.filter((driver) => driver.corridor === 'ayeduase').length },
     roads: uniqueRoads.map((road, index) => ({ ...roadConditionFor(activeSimulation.scenario, index), coordinates: road.coordinates, hasIncident: activeSimulation.scenario === 'incident' && index === 0 })),
   };
 }
@@ -104,7 +107,8 @@ export async function startSimulation(scenario: Scenario) {
   if (state) return simulationStatus();
   // Also recover cleanly if the server was restarted during an earlier demo.
   await clearSimulationData();
-  const roads = await findKnustRoads();
+  const knustRoads = await findKnustRoads();
+  const ayeduaseRoad: Road = AYEDUASE_SIMULATION_CORRIDOR.geometry;
   const sessions = await Promise.all(SIMULATION_DRIVER_IDS.map((driverId) => startOrGetActiveSession(driverId, new Date())));
   if (sessions.some((session) => !session)) throw new Error('Could not start all simulation tracking sessions');
   const report = await createIncident({
@@ -113,7 +117,11 @@ export async function startSimulation(scenario: Scenario) {
     severity: scenario === 'incident' ? 'high' : 'medium', roadName: 'KNUST demonstration corridor', city: 'Kumasi',
     latitude: KNUST.latitude, longitude: KNUST.longitude,
   });
-  const drivers = SIMULATION_DRIVER_IDS.map((driverId, index) => ({ driverId, sessionId: sessions[index]!.id, road: roads[index % roads.length], cursor: (index * 3) % roads[index % roads.length].coordinates.length }));
+  const drivers = SIMULATION_DRIVER_IDS.map((driverId, index) => {
+    const corridor = index < DRIVERS_PER_CORRIDOR ? 'knust' as const : 'ayeduase' as const;
+    const road = corridor === 'knust' ? knustRoads[index % knustRoads.length] : ayeduaseRoad;
+    return { driverId, sessionId: sessions[index]!.id, road, cursor: (index * 3) % road.coordinates.length, corridor };
+  });
   const timer = setInterval(() => { void emitPoints(); }, TICK_MS);
   state = { scenario, startedAt: new Date().toISOString(), drivers, timer, ticking: false, reportId: report?.id ?? null };
   await emitPoints();

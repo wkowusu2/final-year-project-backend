@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import { AYEDUASE_SIMULATION_CORRIDOR } from '../configs/simulationCorridors.js';
 import { getDb } from '../configs/db.config.js';
 import { errorReturnDb, successReturnDb } from '../utils/db.utils.js';
 
@@ -104,6 +105,16 @@ export async function getRoadsInViewport(west: number, south: number, east: numb
                 geometry: road.geometry,
             }];
         });
+        const ayeduase = AYEDUASE_SIMULATION_CORRIDOR;
+        const ayeduaseIsVisible = ayeduase.geometry.coordinates.some(([longitude, latitude]) => longitude >= west && longitude <= east && latitude >= south && latitude <= north);
+        if (ayeduaseIsVisible && !features.some((feature) => feature.id === ayeduase.osmId)) {
+            features.push({
+                type: 'Feature' as const,
+                id: ayeduase.osmId,
+                properties: { highway: 'tertiary', name: ayeduase.name, ref: null },
+                geometry: ayeduase.geometry,
+            });
+        }
 
         return successReturnDb({
             type: 'FeatureCollection' as const,

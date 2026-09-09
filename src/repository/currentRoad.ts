@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { getDb } from '../configs/db.config.js';
+import { simulationCorridorName } from '../configs/simulationCorridors.js';
 
 type CurrentRoadRow = { osmId: string; roadName: string | null; roadRef: string | null; sampleCount: number | string; medianSpeedKph: number | string | null; advisoryCount: number | string; incidentCount: number | string };
 
@@ -31,5 +32,5 @@ export async function getCurrentRoadCondition(driverId: string) {
   if (!row) return null;
   const medianSpeedKph = row.medianSpeedKph == null ? null : Number(row.medianSpeedKph);
   const trafficLevel = medianSpeedKph == null || Number(row.sampleCount) < 3 ? 'unknown' : medianSpeedKph < 12 ? 'severe' : medianSpeedKph < 25 ? 'heavy' : medianSpeedKph < 40 ? 'moderate' : 'free';
-  return { osmId: row.osmId, roadName: row.roadName ?? row.roadRef ?? `OSM road ${row.osmId}`, medianSpeedKph, sampleCount: Number(row.sampleCount), trafficLevel, advisoryCount: Number(row.advisoryCount), incidentCount: Number(row.incidentCount) };
+  return { osmId: row.osmId, roadName: row.roadName ?? row.roadRef ?? simulationCorridorName(row.osmId) ?? `OSM road ${row.osmId}`, medianSpeedKph, sampleCount: Number(row.sampleCount), trafficLevel, advisoryCount: Number(row.advisoryCount), incidentCount: Number(row.incidentCount) };
 }

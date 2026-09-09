@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
 
 import { getDb } from '../configs/db.config.js';
+import { simulationCorridorName } from '../configs/simulationCorridors.js';
 import { incidents } from '../schema/incidents.js';
 
 type MetricsRow = {
@@ -110,7 +111,7 @@ export async function getAdminDashboard(windowMinutes: number) {
     },
     trafficRoads: trafficResult.rows.map((road) => ({
       osmId: road.osmId,
-      roadName: road.roadName ?? road.roadRef ?? `OSM road ${road.osmId}`,
+      roadName: road.roadName ?? road.roadRef ?? simulationCorridorName(road.osmId) ?? `OSM road ${road.osmId}`,
       roadRef: road.roadRef,
       highway: road.highway,
       sampleCount: Number(road.sampleCount),
